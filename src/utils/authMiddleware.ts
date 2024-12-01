@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 import { NextApiRequest, NextApiResponse } from "next";
 
 export function authenticateToken(req: NextApiRequest, res: NextApiResponse) {
-  const token = req.cookies.token;
+  const token = req.cookies.authToken;
 
   if (!token) {
     throw new Error("Authentication required");
@@ -10,7 +10,7 @@ export function authenticateToken(req: NextApiRequest, res: NextApiResponse) {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!);
-    return decoded; // Return decoded user data
+    return decoded;
   } catch (err) {
     throw new Error("Invalid or expired token");
   }

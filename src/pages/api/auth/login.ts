@@ -18,11 +18,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) return res.status(401).json({ error: "Invalid credentials" });
-
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET!, { expiresIn: "1h" });
-
-    res.setHeader("Set-Cookie", `token=${token}; HttpOnly; Path=/; Max-Age=3600`);
-    res.status(200).json({ message: "Login successful" });
+    const token = jwt.sign({ id: user._id, username: user.username, email: user.email }, process.env.JWT_SECRET!, { expiresIn: "1h" });
+    res.setHeader("Set-Cookie", `authToken=${token}; HttpOnly; Path=/; Max-Age=3600`);
+    res.status(200).json({ message: "Login successful", token:token });
   } catch (error) {
     res.status(500).json({ error: "Something went wrong" });
   }

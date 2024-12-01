@@ -1,48 +1,69 @@
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { useState } from "react";
-import Cookies from "js-cookie"; // Import js-cookie
 
 export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [error, setError] = useState("");
   const router = useRouter();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const res = await fetch("/api/auth/verify", {
+          method: "GET",
+          credentials: "include",
+        });
+
+        if (res.ok) {
+          router.push("/");
+        }
+      } catch (error) {
+        console.log("Not authenticated or error checking auth");
+      }
+    };
+
+    checkAuth();
+  }, [router]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
 
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, password }),
-    });
-
-    if (res.ok) {
-      const { token } = await res.json(); // Assuming the token is returned in the response body
-      // Store token securely in cookies (HttpOnly flag for better security)
-      Cookies.set("authToken", token, { expires: 7 }); // The token expires after 7 days
-      router.push("/dashboard"); // Redirect to dashboard after login
-    } else {
-      alert("Login failed!");
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      if (res.ok) {
+        router.push("/dashboard");
+      } else {
+        const data = await res.json();
+        setError(data.error || "Failed to login");
+      }
+    } catch (err) {
+      setError("Something went wrong");
     }
   };
 
   return (
-    <form onSubmit={handleLogin}>
-      <input
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="Email"
-      />
-      <input
-        type="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        placeholder="Password"
-      />
-      <button type="submit">Login</button>
-    </form>
+    <div>
+      <form onSubmit={handleSubmit}>
+        <input
+          type="email"
+          placeholder="Email"
+          value={formData.email}
+          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={formData.password}
+          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+        />
+        <button type="submit">Login</button>
+      </form>
+      {error && <p style={{ color: "red" }}>{error}</p>}
+    </div>
   );
 }
